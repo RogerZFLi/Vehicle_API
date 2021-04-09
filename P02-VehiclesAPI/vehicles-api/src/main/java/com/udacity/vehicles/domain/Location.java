@@ -1,7 +1,6 @@
 package com.udacity.vehicles.domain;
 
 import javax.persistence.Embeddable;
-import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -19,16 +18,16 @@ public class Location {
     @NotNull
     private Double lon;
 
-    @Transient
+//    @Transient
     private String address;
 
-    @Transient
+//    @Transient
     private String city;
 
-    @Transient
+//    @Transient
     private String state;
 
-    @Transient
+//    @Transient
     private String zip;
 
     public Location() {

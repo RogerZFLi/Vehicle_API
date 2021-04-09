@@ -1,40 +1,45 @@
 package com.udacity.vehicles.api;
 
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
-
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.service.CarService;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /**
  * Implements a REST-based controller for the Vehicles API.
  */
 @RestController
+@ApiResponses(value = {
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 201, message = "Created - A new car record has been created successfully"),
+        @ApiResponse(code = 204, message = "NotContent - The item has been removed successfully"),
+        @ApiResponse(code = 400, message = "BadRequest - Please confirm that you are using a correct url, e.g.'http://localhost:8080/cars/<id>'"),
+        @ApiResponse(code = 401, message = "Unauthorized - Please ensure you are authenticated user and are assigned with the right authorization"),
+        @ApiResponse(code = 404, message = "NotFound - The record doesn't exist in the database /server"),
+        @ApiResponse(code = 500, message = "InternalServerError - The server is not running or there are some apis were not discovered by the server")
+})
 @RequestMapping("/cars")
 class CarController {
 
     private final CarService carService;
-    private final CarResourceAssembler assembler;
+    private final CarModelAssembler assembler;
 
-    CarController(CarService carService, CarResourceAssembler assembler) {
+    CarController(CarService carService, CarModelAssembler assembler) {
         this.carService = carService;
         this.assembler = assembler;
     }
@@ -44,10 +49,10 @@ class CarController {
      * @return list of vehicles
      */
     @GetMapping
-    Resources<Resource<Car>> list() {
-        List<Resource<Car>> resources = carService.list().stream().map(assembler::toResource)
+    CollectionModel<EntityModel<Car>> list() {
+        List<EntityModel<Car>> models = carService.list().stream().map(assembler::toModel)
                 .collect(Collectors.toList());
-        return new Resources<>(resources,
+        return CollectionModel.of(models,
                 linkTo(methodOn(CarController.class).list()).withSelfRel());
     }
 
@@ -57,13 +62,13 @@ class CarController {
      * @return all information for the requested vehicle
      */
     @GetMapping("/{id}")
-    Resource<Car> get(@PathVariable Long id) {
+    EntityModel<Car> get(@PathVariable Long id) {
         /**
          * TODO: Use the `findById` method from the Car Service to get car information.
          * TODO: Use the `assembler` on that car and return the resulting output.
          *   Update the first line as part of the above implementing.
          */
-        return assembler.toResource(new Car());
+        return assembler.toModel(carService.findById(id));
     }
 
     /**
@@ -79,8 +84,9 @@ class CarController {
          * TODO: Use the `assembler` on that saved car and return as part of the response.
          *   Update the first line as part of the above implementing.
          */
-        Resource<Car> resource = assembler.toResource(new Car());
-        return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
+
+        EntityModel<Car> model = assembler.toModel(carService.save(car));
+        return ResponseEntity.created(new URI(model.getRequiredLink(IanaLinkRelations.SELF ).expand().getHref())).body(model);
     }
 
     /**
@@ -97,7 +103,9 @@ class CarController {
          * TODO: Use the `assembler` on that updated car and return as part of the response.
          *   Update the first line as part of the above implementing.
          */
-        Resource<Car> resource = assembler.toResource(new Car());
+        car.setId(id);
+
+        EntityModel<Car> resource = assembler.toModel(carService.save(car));
         return ResponseEntity.ok(resource);
     }
 
@@ -111,6 +119,7 @@ class CarController {
         /**
          * TODO: Use the Car Service to delete the requested vehicle.
          */
+        carService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

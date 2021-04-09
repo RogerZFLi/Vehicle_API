@@ -17,7 +17,8 @@ public class PricingService {
     /**
      * Holds {ID: Price} pairings (current implementation allows for 20 vehicles)
      */
-    private static final Map<Long, Price> PRICES = LongStream
+
+    private static Map<Long, Price> PRICES = LongStream
             .range(1, 20)
             .mapToObj(i -> new Price("USD", randomPrice(), i))
             .collect(Collectors.toMap(Price::getVehicleId, p -> p));
@@ -33,7 +34,6 @@ public class PricingService {
         if (!PRICES.containsKey(vehicleId)) {
             throw new PriceException("Cannot find price for Vehicle " + vehicleId);
         }
-
         return PRICES.get(vehicleId);
     }
 
@@ -42,8 +42,20 @@ public class PricingService {
      * @return random price for a vehicle
      */
     private static BigDecimal randomPrice() {
-        return new BigDecimal(ThreadLocalRandom.current().nextDouble(1, 5))
-                .multiply(new BigDecimal(5000d)).setScale(2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(1, 5))
+                .multiply(new BigDecimal("5000")).setScale(2, RoundingMode.HALF_UP);
     }
+    //To remove the price assigned to the vehicle to be removed
+    public static void deletePrice(Long vehicleId) throws PriceException{
+        if (!PRICES.containsKey(vehicleId)) {
+            throw new PriceException("Cannot find price for Vehicle " + vehicleId);
+        }
+        //Randomize the price to avoid getting the same price to the same vehicleId
+        PRICES.remove(vehicleId);
+        //Obtain a new random price for the removed ID
+        PRICES.put(vehicleId, new Price("USD", randomPrice(),vehicleId));
+
+    }
+
 
 }

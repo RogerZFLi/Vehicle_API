@@ -41,11 +41,25 @@ public class PriceClient {
                     )
                     .retrieve().bodyToMono(Price.class).block();
 
+            assert price != null;
             return String.format("%s %s", price.getCurrency(), price.getPrice());
 
         } catch (Exception e) {
             log.error("Unexpected error retrieving price for vehicle {}", vehicleId, e);
         }
         return "(consult price)";
+    }
+    //To remove the price assigned to the vehicle to be removed
+    public void deletePrice(Long vehicleId) {
+        try {
+            Price price = client
+                    .delete()
+                    .uri(uriBuilder -> uriBuilder.path("services/price/id")
+                    .queryParam("vehicleId", vehicleId)
+                    .build())
+                .retrieve().bodyToMono(Price.class).block();
+        }catch (Exception e) {
+            log.error("Unexpected error retrieving price for vehicle {}", vehicleId, e);
+        }
     }
 }
