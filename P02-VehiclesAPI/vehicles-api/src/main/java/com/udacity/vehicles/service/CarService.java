@@ -89,7 +89,8 @@ public class CarService {
             return repository.findById(car.getId())
                     .map(carToBeUpdated -> {
                         carToBeUpdated.setDetails(car.getDetails());
-
+                        //Added to fulfill the review requirement "update condition"
+                        carToBeUpdated.setCondition(car.getCondition());
                         //Check if the new location changed or not
                         //If not keep original location, otherwise retrieve another random location according to given lat and lon
                         if(!car.getLocation().getLat().equals(carToBeUpdated.getLocation().getLat())
@@ -100,7 +101,7 @@ public class CarService {
         }else {
             return Optional.of(car).map(carToBeSaved->{
                 carToBeSaved.setDetails(car.getDetails());
-
+                carToBeSaved.setCondition(car.getCondition());
                 carToBeSaved.setLocation(mapsClient.getAddress(car.getLocation()));
                 //Add price for the car to be created
                 Car carWithId = repository.save(carToBeSaved);
